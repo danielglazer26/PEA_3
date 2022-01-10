@@ -3,4 +3,4 @@ project(Etap3)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(Etap3 main.cpp)
+add_executable(Etap3 main.cpp Source/Matrix.cpp Header/Matrix.h Source/LoadFromFile.cpp Header/LoadFromFile.h Header/GeneticAlgorithm.cpp Header/GeneticAlgorithm.h)

@@ -1,6 +1,8 @@
 #include <iostream>
+#include "Header/GeneticAlgorithm.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    auto *gen = new GeneticAlgorithm();
+    gen->startAlgorithm();
     return 0;
 }
