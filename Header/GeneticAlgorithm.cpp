@@ -22,23 +22,31 @@ void GeneticAlgorithm::startAlgorithm(double probability, int populationSize, in
     mainLoop(gen, probability, populationSize, populationCopyNumber, generationNumber);
 }
 
-void GeneticAlgorithm::mainLoop(std::mt19937 engine, double probability, int populationSize, int populationCopyNumber,
+void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populationSize, int populationCopyNumber,
                                 int generationNumber) {
 
 
-    int firstParent = 0, secondParent = 1;
+    float sum;
 
     for (int i = 0; i < generationNumber; i++) {
 
-        vector<float> fitnessValueTable(populationCopyNumber, 0);
+
 
         for (int j = 0; j < populationSize; j++) {
             vector<unsigned> child1(matrixWeights->getSize(), 0);
             vector<unsigned> child2(matrixWeights->getSize(), 0);
 
-            countFitnessValue(fitnessValueTable);
-            auto pointer1 = population.begin() + firstParent;
-            auto pointer2 = population.begin() + secondParent;
+            sum = 0;
+            vector<float> fitnessValueTable(population.size(), 0);
+            countFitnessValue(fitnessValueTable, sum);
+            pair<int, int> parents = rouletteWheelSelection(engine, fitnessValueTable, sum);
+
+            /*auto pointer1 = population.begin() + tournamentSelection(engine);
+            auto pointer2 = population.begin() + tournamentSelection(engine);
+            */
+            auto pointer1 = population.begin() + parents.first;
+            auto pointer2 = population.begin() + parents.second;
+
             makePartiallyMappedCrossover(
                     pointer1->second,
                     pointer2->second,
@@ -57,7 +65,53 @@ void GeneticAlgorithm::mainLoop(std::mt19937 engine, double probability, int pop
 
 }
 
-void GeneticAlgorithm::countFitnessValue(vector<float> &fitness) {
+void GeneticAlgorithm::countFitnessValue(vector<float> &fitness, float &sum) {
+
+    for (int i = 0; i < population.size(); i++) {
+        fitness.at(i) = ((float)finalCost / (population.begin() + i)->first);
+    }
+
+    for (int i = 0; i < population.size(); i++) {
+        sum += fitness.at(i);
+    }
+}
+
+int GeneticAlgorithm::tournamentSelection(mt19937 &engine) {
+    uniform_int_distribution<> randomParent(0, population.size() - 1);
+
+    int a, b;
+    a = randomParent(engine);
+    b = randomParent(engine);
+
+    return (population.at(a).first > population.at(b).first ? a : b);
+
+}
+
+pair<int, int> GeneticAlgorithm::rouletteWheelSelection(mt19937 &engine, vector<float> &fitness, float &sum) {
+
+
+    uniform_real_distribution<float> randomNumber(0, sum);
+    float r = randomNumber(engine);
+    float r2 = randomNumber(engine);
+
+    if (r2 < r)
+        swap(r2, r);
+
+
+    pair<int, int> parents(-1, -1);
+    float sum2 = 0;
+
+    for (int i = 0; i < population.size(); i++) {
+        sum2 += fitness.at(i);
+        if (r <= sum2 && parents.first == -1)
+            parents.first = i;
+        else if (r2<= sum2){
+            parents.second = i;
+            return parents;
+        }
+
+    }
+
 
 }
 
@@ -77,19 +131,6 @@ void GeneticAlgorithm::checkMutation(std::mt19937 engine, vector<unsigned int> &
         globalPath = pointerLast->second;
     }
 }
-
-/*int GeneticAlgorithm::tournamentSelection() {
-    uniform_int_distribution<> randomParent(0, population.size() - 1);
-
-    int a, b;
-    do {
-        a = randomParent(gen);
-        b = randomParent(gen);
-    } while (a == b);
-
-    return (population.at(a).first > population.at(b).first ? a : b);
-
-}*/
 
 // generowanie pierwszych rodziców o liczbie populationCopyNumber
 void GeneticAlgorithm::generateRandomParents(std::mt19937 engine, int populationCopyNumber) {

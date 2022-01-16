@@ -3,6 +3,6 @@
 
 int main() {
     auto *gens = new GeneticAlgorithm();
-    gens->startAlgorithm(0.40, 100, 10, 5);
+    gens->startAlgorithm(0.6, 50, 15, 100);
     return 0;
 }

@@ -6,6 +6,8 @@
 #include <ctime>
 #include "Matrix.h"
 
+using namespace std;
+
 class GeneticAlgorithm {
 
 private:
@@ -50,9 +52,9 @@ public:
     completeRestPoints(unsigned int firstNoCopied, const std::vector<unsigned int> &parent,
                        std::vector<unsigned int> *child, int a, int b);
 
-    int tournamentSelection();
+    int tournamentSelection(std::mt19937 &engine);
 
-    void mainLoop(std::mt19937 engine, double probability, int populationSize, int populationCopyNumber,
+    void mainLoop(std::mt19937 &engine, double probability, int populationSize, int populationCopyNumber,
                   int generationNumber);
 
     void showPRD();
@@ -63,7 +65,9 @@ public:
 
     void copyPopulation(int number);
 
-    void countFitnessValue(std::vector<float> &fitness);
+    void countFitnessValue(vector<float> &fitness, float &sum);
+
+    pair<int, int> rouletteWheelSelection(mt19937 &engine, vector<float> &fitness, float &sum);
 };
 
 
