@@ -13,7 +13,7 @@ public:
     ~LoadFromFile() {
         file.close();
     }
-    bool openFileName(std::string nameOfFile);
+    bool openFileName(const std::string& nameOfFile);
 
 private:
 

@@ -26,21 +26,24 @@ private:
     int finalCost = INT_MAX;
     std::vector<unsigned int> globalPath;
 
-    int swapNeighbors(std::vector<unsigned int> *path, int i, int j);
-
-public:
-    GeneticAlgorithm();
-
-    void startAlgorithm(double probability, int populationSize, int populationCopyNumber,
-                        int generationNumber);
-
-    int calculateCost(std::vector<unsigned int> path);
-
-    static void showPath(std::vector<unsigned int> path);
+    void mainLoop(mt19937 &engine, double probability, int populationSize, int populationCopyNumber,
+                  int generationNumber, int selectionType, int crossoverType);
 
     void generateRandomParents(std::mt19937 engine, int populationCopyNumber);
 
-    void makePartiallyMappedCrossover(std::vector<unsigned int> parent1, std::vector<unsigned int> parent2,
+    void countFitnessValue(vector<float> &fitness, float &sum);
+
+    pair<int, int> rouletteWheelSelection(mt19937 &engine, vector<float> &fitness, float &sum);
+
+    pair<int, int> tournamentSelection(mt19937 &engine);
+
+    void checkMutation(std::mt19937 engine, std::vector<unsigned int> &child, double probability);
+
+    void makeMutation(std::pair<int, std::vector<unsigned int>> *path);
+
+    int swapNeighbors(std::vector<unsigned int> *path, int i, int j);
+
+    void makePartiallyMappedCrossover(const vector<unsigned int> &parent1, const vector<unsigned int> &parent2,
                                       std::vector<unsigned int> &child1, std::vector<unsigned int> &child2,
                                       std::mt19937 engine);
 
@@ -52,22 +55,29 @@ public:
     completeRestPoints(unsigned int firstNoCopied, const std::vector<unsigned int> &parent,
                        std::vector<unsigned int> *child, int a, int b);
 
-    int tournamentSelection(std::mt19937 &engine);
+    static void
+    makeOrderCrossoverOperator(const vector<unsigned int>& parent1, const vector<unsigned int>& parent2, vector<unsigned int> &child1,
+                               vector<unsigned int> &child2, mt19937 engine);
 
-    void mainLoop(std::mt19937 &engine, double probability, int populationSize, int populationCopyNumber,
-                  int generationNumber);
-
-    void showPRD();
-
-    void makeMutation(std::pair<int, std::vector<unsigned int>> *path);
-
-    void checkMutation(std::mt19937 engine, std::vector<unsigned int> &child, double probability);
+    static void
+    copySequenceFromOrderCrossoverOperator(const vector<unsigned int> &parent, vector<unsigned int> &child,
+                                           const int &a,
+                                           const int &b);
 
     void copyPopulation(int number);
 
-    void countFitnessValue(vector<float> &fitness, float &sum);
+    void showPRD();
 
-    pair<int, int> rouletteWheelSelection(mt19937 &engine, vector<float> &fitness, float &sum);
+    int calculateCost(std::vector<unsigned int> path);
+
+    static void showPath(std::vector<unsigned int> path);
+
+public:
+    GeneticAlgorithm();
+
+    void startAlgorithm(double probability, int populationSize, int populationCopyNumber,
+                        int generationNumber,  int selectionType, int crossoverType);
+
 };
 
 

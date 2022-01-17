@@ -21,7 +21,7 @@ bool LoadFromFile::openFile(){
     }
 }
 ///załadowanie pliku grafu
-bool LoadFromFile::openFileName(std::string nameOfFile){
+bool LoadFromFile::openFileName(const std::string& nameOfFile){
 
     file.open(nameOfFile);
     if(!file.is_open()) {

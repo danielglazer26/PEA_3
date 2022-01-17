@@ -11,54 +11,89 @@ GeneticAlgorithm::GeneticAlgorithm() {
     matrixWeights = new Matrix();
     matrix = matrixWeights->getMatrixWeights();
 }
-
+/**
+ *
+ * @param probability - prawdopodobieństwo - wystąpienia mutacji
+ * @param populationSize - rozmiar populacji w jednej generacji
+ * @param populationCopyNumber - liczba osobników populacji przenoszona do kolejnej epoki
+ * @param generationNumber - liczba generacji
+ * @param selectionType - wybór selekcji:
+ *          0 - selekcja koła ruletki
+ *          1 - selekcja turniejowa
+ * @param crossoverType - wybór typu krzyżowania:
+ *          0 - Partially Mapped Crossover
+ *          1 - Order Crossover Operator
+ */
 void GeneticAlgorithm::startAlgorithm(double probability, int populationSize, int populationCopyNumber,
-                                      int generationNumber) {
-    srand(time(nullptr));
+                                      int generationNumber,  int selectionType, int crossoverType) {
+    //srand(time(nullptr));
+    srand(100);
     mt19937 gen(rand());
 
 
     generateRandomParents(gen, populationCopyNumber);
-    mainLoop(gen, probability, populationSize, populationCopyNumber, generationNumber);
+    mainLoop(gen, probability, populationSize, populationCopyNumber, generationNumber, selectionType, crossoverType);
 }
 
 void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populationSize, int populationCopyNumber,
-                                int generationNumber) {
+                                int generationNumber, int selectionType, int crossoverType) {
 
 
     float sum;
+    pair<int, int> parents;
+    auto pointer1 = population.begin();
+    auto pointer2 = population.begin();
+
 
     for (int i = 0; i < generationNumber; i++) {
-
-
 
         for (int j = 0; j < populationSize; j++) {
             vector<unsigned> child1(matrixWeights->getSize(), 0);
             vector<unsigned> child2(matrixWeights->getSize(), 0);
 
             sum = 0;
-            vector<float> fitnessValueTable(population.size(), 0);
-            countFitnessValue(fitnessValueTable, sum);
-            pair<int, int> parents = rouletteWheelSelection(engine, fitnessValueTable, sum);
 
-            /*auto pointer1 = population.begin() + tournamentSelection(engine);
-            auto pointer2 = population.begin() + tournamentSelection(engine);
-            */
-            auto pointer1 = population.begin() + parents.first;
-            auto pointer2 = population.begin() + parents.second;
 
-            makePartiallyMappedCrossover(
-                    pointer1->second,
-                    pointer2->second,
-                    child1,
-                    child2,
-                    engine);
+            switch (selectionType) {
+                case 0: {
+                    sort(population.begin(), population.end(), cmp);
+                    vector<float> fitnessValueTable(population.size(), 0);
+                    countFitnessValue(fitnessValueTable, sum);
+                    parents = rouletteWheelSelection(engine, fitnessValueTable, sum);
+                    break;
+                }
+                case 1:
+                    parents = tournamentSelection(engine);
+                    break;
+            }
+
+            pointer1 = population.begin() + parents.first;
+            pointer2 = population.begin() + parents.second;
+
+            switch (crossoverType) {
+                case 0:
+                    makePartiallyMappedCrossover(
+                            pointer1->second,
+                            pointer2->second,
+                            child1,
+                            child2,
+                            engine);
+                    break;
+                case 1:
+                    makeOrderCrossoverOperator(pointer1->second,
+                                               pointer2->second,
+                                               child1,
+                                               child2,
+                                               engine);
+                    break;
+            }
 
             checkMutation(engine, child1, probability);
             checkMutation(engine, child2, probability);
         }
         sort(population.begin(), population.end(), cmp);
         copyPopulation(populationCopyNumber);
+
     }
     showPath(globalPath);
     showPRD();
@@ -68,7 +103,7 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
 void GeneticAlgorithm::countFitnessValue(vector<float> &fitness, float &sum) {
 
     for (int i = 0; i < population.size(); i++) {
-        fitness.at(i) = ((float)finalCost / (population.begin() + i)->first);
+        fitness.at(i) = ((float) finalCost / (population.begin() + i)->first);
     }
 
     for (int i = 0; i < population.size(); i++) {
@@ -76,17 +111,35 @@ void GeneticAlgorithm::countFitnessValue(vector<float> &fitness, float &sum) {
     }
 }
 
-int GeneticAlgorithm::tournamentSelection(mt19937 &engine) {
-    uniform_int_distribution<> randomParent(0, population.size() - 1);
+// wybieranie rodziców do krzyżowania na podstawie selekcji turniejowej
+pair<int, int> GeneticAlgorithm::tournamentSelection(mt19937 &engine) {
+    uniform_int_distribution<> randomParent(0, static_cast<int>(population.size()) - 1);
 
     int a, b;
     a = randomParent(engine);
     b = randomParent(engine);
 
-    return (population.at(a).first > population.at(b).first ? a : b);
+    pair<int, int> parents;
+
+    if (population.at(a).first > population.at(b).first)
+        parents.first = b;
+    else
+        parents.first = a;
+
+    a = randomParent(engine);
+    b = randomParent(engine);
+
+
+    if (population.at(a).first > population.at(b).first)
+        parents.second = b;
+    else
+        parents.second = a;
+
+    return parents;
 
 }
 
+// wybieranie rodziców do krzyżowania na podstawie selekcji koła ruletki
 pair<int, int> GeneticAlgorithm::rouletteWheelSelection(mt19937 &engine, vector<float> &fitness, float &sum) {
 
 
@@ -98,21 +151,20 @@ pair<int, int> GeneticAlgorithm::rouletteWheelSelection(mt19937 &engine, vector<
         swap(r2, r);
 
 
-    pair<int, int> parents(-1, -1);
+    pair<int, int> parents(-1, 0);
     float sum2 = 0;
 
     for (int i = 0; i < population.size(); i++) {
         sum2 += fitness.at(i);
         if (r <= sum2 && parents.first == -1)
             parents.first = i;
-        else if (r2<= sum2){
+        else if (r2 <= sum2) {
             parents.second = i;
             return parents;
         }
-
     }
 
-
+    return parents;
 }
 
 // sprawdzenie na podstawie prawdopodobieństwa czy może zajść mutacja
@@ -152,7 +204,7 @@ void GeneticAlgorithm::generateRandomParents(std::mt19937 engine, int population
 
 // metoda krzyżowania - Partially Mapped Crossover
 void
-GeneticAlgorithm::makePartiallyMappedCrossover(std::vector<unsigned int> parent1, std::vector<unsigned int> parent2,
+GeneticAlgorithm::makePartiallyMappedCrossover(const vector<unsigned int> &parent1, const vector<unsigned int> &parent2,
                                                std::vector<unsigned int> &child1, std::vector<unsigned int> &child2,
                                                std::mt19937 engine) {
     uniform_int_distribution<> cutPoints(1, matrixWeights->getSize() - 1);
@@ -183,6 +235,68 @@ GeneticAlgorithm::makePartiallyMappedCrossover(std::vector<unsigned int> parent1
 
     completeRestPoints(firstNoCopied1, parent2, &child1, a, b);
     completeRestPoints(firstNoCopied2, parent1, &child2, a, b);
+
+}
+
+// metoda krzyżowania - Order Crossover Operator
+void GeneticAlgorithm::makeOrderCrossoverOperator(const std::vector<unsigned int> &parent1,
+                                                  const std::vector<unsigned int> &parent2,
+                                                  std::vector<unsigned int> &child1, std::vector<unsigned int> &child2,
+                                                  std::mt19937 engine) {
+
+    uniform_int_distribution<> cutPoints(1, static_cast<int>(parent1.size()) - 2);
+
+
+    int a = 0, b = 0;
+
+    //losowanie punktów przecięcia
+    while (a == b) {
+        a = cutPoints(engine);
+        b = cutPoints(engine);
+    }
+    if (a > b)
+        swap(a, b);
+
+    //kopiowanie obszarów przecięcia
+    for (int i = a; i <= b; i++) {
+        child1.at(i) = parent1.at(i);
+        child2.at(i) = parent2.at(i);
+    }
+
+    copySequenceFromOrderCrossoverOperator(parent2, child1, a, b);
+    copySequenceFromOrderCrossoverOperator(parent1, child2, a, b);
+
+
+}
+
+// kopiowanie pozostałych wierzchołków sekwencji, które nie były w wyciętym obszarze
+void GeneticAlgorithm::copySequenceFromOrderCrossoverOperator(const vector<unsigned int> &parent,
+                                                              vector<unsigned int> &child, const int &a, const int &b) {
+    int j = b + 1;
+    auto v = parent.begin() + b + 1;
+
+    do {
+
+        if (find(child.begin() + a, child.begin() + b + 1, *v) == child.begin() + b + 1) {
+            child.at(j) = *v;
+            if (v != parent.end() - 1)
+                v++;
+            else
+                v = parent.begin();
+        } else {
+            if (v != parent.end() - 1)
+                v++;
+            else
+                v = parent.begin();
+            continue;
+        }
+
+        if (j < child.size() - 1)
+            j++;
+        else
+            j = 0;
+
+    } while (j != a);
 
 }
 
@@ -298,7 +412,7 @@ int GeneticAlgorithm::calculateCost(vector<unsigned int> path) {
 // kopiowanie najlepszych jednostek z populacji do nowej generacji
 void GeneticAlgorithm::copyPopulation(int number) {
     std::vector<std::pair<int, std::vector<unsigned int>>> p2;
-    for (int i = 0; i < number; i++) p2.push_back((population.begin() + i).operator*());
+    for (int i = 0; i < number; i++) p2.push_back(population.at(i));
     population = p2;
 }
 
