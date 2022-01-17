@@ -39,7 +39,7 @@ private:
 
     void checkMutation(std::mt19937 engine, std::vector<unsigned int> &child, double probability);
 
-    void makeMutation(std::pair<int, std::vector<unsigned int>> *path);
+    void makeMutationBest(std::pair<int, std::vector<unsigned int>> *path);
 
     int swapNeighbors(std::vector<unsigned int> *path, int i, int j);
 
@@ -78,6 +78,9 @@ public:
     void startAlgorithm(double probability, int populationSize, int populationCopyNumber,
                         int generationNumber,  int selectionType, int crossoverType);
 
+    void makeMutationRandomly(pair<int, vector<unsigned int>> *path, mt19937 &engine);
+
+    pair<int, int> rankSelection(mt19937 &engine, vector<float> &fitness, float &sum);
 };
 
 

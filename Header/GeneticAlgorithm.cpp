@@ -3,7 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <random>
-#include <ctime>
+//#include <ctime>
 
 using namespace std;
 
@@ -11,6 +11,7 @@ GeneticAlgorithm::GeneticAlgorithm() {
     matrixWeights = new Matrix();
     matrix = matrixWeights->getMatrixWeights();
 }
+
 /**
  *
  * @param probability - prawdopodobieństwo - wystąpienia mutacji
@@ -20,12 +21,13 @@ GeneticAlgorithm::GeneticAlgorithm() {
  * @param selectionType - wybór selekcji:
  *          0 - selekcja koła ruletki
  *          1 - selekcja turniejowa
+ *          2 - selekcja rankingowa
  * @param crossoverType - wybór typu krzyżowania:
  *          0 - Partially Mapped Crossover
  *          1 - Order Crossover Operator
  */
 void GeneticAlgorithm::startAlgorithm(double probability, int populationSize, int populationCopyNumber,
-                                      int generationNumber,  int selectionType, int crossoverType) {
+                                      int generationNumber, int selectionType, int crossoverType) {
     //srand(time(nullptr));
     srand(100);
     mt19937 gen(rand());
@@ -65,6 +67,12 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
                 case 1:
                     parents = tournamentSelection(engine);
                     break;
+                case 2: {
+                    sort(population.begin(), population.end(), cmp);
+                    vector<float> fitnessValueTable(population.size(), 0);
+                    parents = rankSelection(engine, fitnessValueTable, sum);
+                    break;
+                }
             }
 
             pointer1 = population.begin() + parents.first;
@@ -167,20 +175,43 @@ pair<int, int> GeneticAlgorithm::rouletteWheelSelection(mt19937 &engine, vector<
     return parents;
 }
 
+// wybieranie rodziców do krzyżowania na podstawie selekcji rankingowej
+pair<int, int> GeneticAlgorithm::rankSelection(mt19937 &engine, vector<float> &fitness, float &sum) {
+
+
+    for (float i = 0.0f; i < population.size(); i++) {
+        fitness.at(i) = (population.size() - i) / (population.size() * (population.size() - 1));
+    }
+
+    return rouletteWheelSelection(engine, fitness, sum);
+}
+
 // sprawdzenie na podstawie prawdopodobieństwa czy może zajść mutacja
 void GeneticAlgorithm::checkMutation(std::mt19937 engine, vector<unsigned int> &child, double probability) {
-    uniform_real_distribution<> generateProbability(0.0, 1.0);
+    uniform_real_distribution<double> generateProbability(0.0, 1.0);
 
     population.emplace_back(calculateCost(child), child);
 
-    auto pointerLast = population.end() - 1;
-    if (generateProbability(engine) < probability)
-        makeMutation(pointerLast.base());
+    pair<int, vector<unsigned int>> pointerLast((population.end() - 1)->first, (population.end() - 1)->second);
 
+    if (finalCost > pointerLast.first) {
+        finalCost = pointerLast.first;
+        globalPath = pointerLast.second;
+    }
 
-    if (finalCost > pointerLast->first) {
-        finalCost = pointerLast->first;
-        globalPath = pointerLast->second;
+    double genProb = generateProbability(engine);
+    if (genProb <= 0.01)
+        makeMutationRandomly(&pointerLast, engine);
+    else if (genProb <= probability)
+        makeMutationBest(&pointerLast);
+    else
+        return;
+
+    population.push_back(pointerLast);
+
+    if (finalCost > pointerLast.first) {
+        finalCost = pointerLast.first;
+        globalPath = pointerLast.second;
     }
 }
 
@@ -331,7 +362,7 @@ void GeneticAlgorithm::completeRestPoints(const unsigned int firstNoCopied, cons
 }
 
 // wyznaczanie najlepszej mutacji
-void GeneticAlgorithm::makeMutation(pair<int, vector<unsigned int>> *path) {
+void GeneticAlgorithm::makeMutationBest(pair<int, vector<unsigned int>> *path) {
     int bestI, bestJ, bestSwap = INT_MAX;
     int swapValue;
 
@@ -347,6 +378,25 @@ void GeneticAlgorithm::makeMutation(pair<int, vector<unsigned int>> *path) {
     }
     swap(path->second.at(bestI), path->second.at(bestJ));
     path->first += bestSwap;
+}
+
+// wyznaczanie mutacji losowo
+void GeneticAlgorithm::makeMutationRandomly(pair<int, vector<unsigned int>> *path, mt19937 &engine) {
+    uniform_int_distribution<> swapIndex(1, path->second.size() - 2);
+
+    int i = 0, j = 0;
+
+    while (i == j) {
+        i = swapIndex(engine);
+        j = swapIndex(engine);
+    }
+
+    if (j < i)
+        swap(i, j);
+
+    path->first += swapNeighbors(&path->second, i, j);
+    swap(path->second.at(i), path->second.at(j));
+
 }
 
 // podliczanie zmiany kosztów po zamianie wierzchołków
