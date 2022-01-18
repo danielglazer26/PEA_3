@@ -108,6 +108,7 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
 
 }
 
+// podliczanie zdatności dla selekcji koła ruletki
 void GeneticAlgorithm::countFitnessValue(vector<float> &fitness, float &sum) {
 
     for (int i = 0; i < population.size(); i++) {

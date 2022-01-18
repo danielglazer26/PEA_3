@@ -1,12 +1,12 @@
 #include "../Header/LoadFromFile.h"
 #include <iostream>
 
-///załadowanie pliku grafu
+// załadowanie pliku grafu
 bool LoadFromFile::openFile(){
-    std::string nameOfFile ="ch130.tsp";
+    std::string nameOfFile;
 
-    // std::cout << "Podaj nazwe pliku" << std::endl;
-    //std::cin >> nameOfFile;
+    std::cout << "Podaj nazwe pliku" << std::endl;
+    std::cin >> nameOfFile;
     std::cout << "\n";
     file.open(nameOfFile);
     if(!file.is_open()) {
@@ -20,7 +20,7 @@ bool LoadFromFile::openFile(){
         return true;
     }
 }
-///załadowanie pliku grafu
+// załadowanie pliku grafu
 bool LoadFromFile::openFileName(const std::string& nameOfFile){
 
     file.open(nameOfFile);
