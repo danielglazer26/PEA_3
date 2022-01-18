@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Header/GeneticAlgorithm.h"
+#include "../Header/GeneticAlgorithm.h"
 
 void menu() {
     int a;

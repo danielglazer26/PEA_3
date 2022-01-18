@@ -1,4 +1,4 @@
-#include "GeneticAlgorithm.h"
+#include "../Header/GeneticAlgorithm.h"
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -14,7 +14,7 @@ GeneticAlgorithm::GeneticAlgorithm() {
 
 /**
  *
- * @param probability - prawdopodobieństwo - wystąpienia mutacji
+ * @param probability - prawdopodobieństwo wystąpienia mutacji
  * @param populationSize - rozmiar populacji w jednej generacji
  * @param populationCopyNumber - liczba osobników populacji przenoszona do kolejnej epoki
  * @param generationNumber - liczba generacji
@@ -37,6 +37,7 @@ void GeneticAlgorithm::startAlgorithm(double probability, int populationSize, in
     mainLoop(gen, probability, populationSize, populationCopyNumber, generationNumber, selectionType, crossoverType);
 }
 
+// główna pętla programu
 void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populationSize, int populationCopyNumber,
                                 int generationNumber, int selectionType, int crossoverType) {
 
@@ -96,16 +97,15 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
                     break;
             }
 
-            checkMutation(engine, child1, probability);
-            checkMutation(engine, child2, probability);
+            checkMutation(engine, child1, probability, i * populationSize + j);
+            checkMutation(engine, child2, probability, i * populationSize + j);
         }
         sort(population.begin(), population.end(), cmp);
         copyPopulation(populationCopyNumber);
 
     }
     showPath(globalPath);
-    showPRD();
-
+    showPRD(generationNumber * populationSize);
 }
 
 // podliczanie zdatności dla selekcji koła ruletki
@@ -188,7 +188,7 @@ pair<int, int> GeneticAlgorithm::rankSelection(mt19937 &engine, vector<float> &f
 }
 
 // sprawdzenie na podstawie prawdopodobieństwa czy może zajść mutacja
-void GeneticAlgorithm::checkMutation(std::mt19937 engine, vector<unsigned int> &child, double probability) {
+void GeneticAlgorithm::checkMutation(std::mt19937 engine, vector<unsigned int> &child, double probability, int iter) {
     uniform_real_distribution<double> generateProbability(0.0, 1.0);
 
     population.emplace_back(calculateCost(child), child);
@@ -198,10 +198,11 @@ void GeneticAlgorithm::checkMutation(std::mt19937 engine, vector<unsigned int> &
     if (finalCost > pointerLast.first) {
         finalCost = pointerLast.first;
         globalPath = pointerLast.second;
+        showPRD(iter);
     }
 
     double genProb = generateProbability(engine);
-    if (genProb <= 0.01)
+    if (genProb <= 0.1)
         makeMutationRandomly(&pointerLast, engine);
     else if (genProb <= probability)
         makeMutationBest(&pointerLast);
@@ -213,6 +214,7 @@ void GeneticAlgorithm::checkMutation(std::mt19937 engine, vector<unsigned int> &
     if (finalCost > pointerLast.first) {
         finalCost = pointerLast.first;
         globalPath = pointerLast.second;
+        showPRD(iter);
     }
 }
 
@@ -228,6 +230,7 @@ void GeneticAlgorithm::generateRandomParents(std::mt19937 engine, int population
         if (p.first < finalCost) {
             finalCost = p.first;
             globalPath = p.second;
+            showPRD(i);
         }
         population.push_back(p);
     }
@@ -430,8 +433,10 @@ int GeneticAlgorithm::swapNeighbors(vector<unsigned int> *path, int i, int j) {
 }
 
 // wyświetlanie i obliczanie PRD
-void GeneticAlgorithm::showPRD() {
-    std::cout << finalCost
+void GeneticAlgorithm::showPRD(int iter) {
+    std::cout << iter
+              << " "
+              << finalCost
               << "   "
               << 100 * (((float) (finalCost - matrixWeights->getOptimum()))
                         / (float) matrixWeights->getOptimum())

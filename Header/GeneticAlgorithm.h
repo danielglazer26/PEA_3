@@ -37,7 +37,7 @@ private:
 
     pair<int, int> tournamentSelection(mt19937 &engine);
 
-    void checkMutation(std::mt19937 engine, std::vector<unsigned int> &child, double probability);
+    void checkMutation(std::mt19937 engine, vector<unsigned int> &child, double probability, int iter);
 
     void makeMutationBest(std::pair<int, std::vector<unsigned int>> *path);
 
@@ -66,7 +66,7 @@ private:
 
     void copyPopulation(int number);
 
-    void showPRD();
+    void showPRD(int iter);
 
     int calculateCost(std::vector<unsigned int> path);
 
