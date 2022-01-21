@@ -42,7 +42,6 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
                                 int generationNumber, int selectionType, int crossoverType) {
 
 
-    float sum;
     pair<int, int> parents;
     auto pointer1 = population.begin();
     auto pointer2 = population.begin();
@@ -54,15 +53,12 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
             vector<unsigned> child1(matrixWeights->getSize(), 0);
             vector<unsigned> child2(matrixWeights->getSize(), 0);
 
-            sum = 0;
-
-
             switch (selectionType) {
                 case 0: {
                     sort(population.begin(), population.end(), cmp);
                     vector<float> fitnessValueTable(population.size(), 0);
-                    countFitnessValue(fitnessValueTable, sum);
-                    parents = rouletteWheelSelection(engine, fitnessValueTable, sum);
+                    countFitnessValue(fitnessValueTable);
+                    parents = rouletteWheelSelection(engine, fitnessValueTable);
                     break;
                 }
                 case 1:
@@ -71,7 +67,7 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
                 case 2: {
                     sort(population.begin(), population.end(), cmp);
                     vector<float> fitnessValueTable(population.size(), 0);
-                    parents = rankSelection(engine, fitnessValueTable, sum);
+                    parents = rankSelection(engine, fitnessValueTable);
                     break;
                 }
             }
@@ -109,15 +105,12 @@ void GeneticAlgorithm::mainLoop(mt19937 &engine, double probability, int populat
 }
 
 // podliczanie zdatności dla selekcji koła ruletki
-void GeneticAlgorithm::countFitnessValue(vector<float> &fitness, float &sum) {
+void GeneticAlgorithm::countFitnessValue(vector<float> &fitness) {
 
     for (int i = 0; i < population.size(); i++) {
         fitness.at(i) = ((float) finalCost / (population.begin() + i)->first);
     }
 
-    for (int i = 0; i < population.size(); i++) {
-        sum += fitness.at(i);
-    }
 }
 
 // wybieranie rodziców do krzyżowania na podstawie selekcji turniejowej
@@ -149,8 +142,13 @@ pair<int, int> GeneticAlgorithm::tournamentSelection(mt19937 &engine) {
 }
 
 // wybieranie rodziców do krzyżowania na podstawie selekcji koła ruletki
-pair<int, int> GeneticAlgorithm::rouletteWheelSelection(mt19937 &engine, vector<float> &fitness, float &sum) {
+pair<int, int> GeneticAlgorithm::rouletteWheelSelection(mt19937 &engine, vector<float> &fitness) {
 
+    float sum = 0;
+
+    for (int i = 0; i < population.size(); i++) {
+        sum += fitness.at(i);
+    }
 
     uniform_real_distribution<float> randomNumber(0, sum);
     float r = randomNumber(engine);
@@ -177,14 +175,14 @@ pair<int, int> GeneticAlgorithm::rouletteWheelSelection(mt19937 &engine, vector<
 }
 
 // wybieranie rodziców do krzyżowania na podstawie selekcji rankingowej
-pair<int, int> GeneticAlgorithm::rankSelection(mt19937 &engine, vector<float> &fitness, float &sum) {
+pair<int, int> GeneticAlgorithm::rankSelection(mt19937 &engine, vector<float> &fitness) {
 
 
     for (float i = 0.0f; i < population.size(); i++) {
         fitness.at(i) = (population.size() - i) / (population.size() * (population.size() - 1));
     }
 
-    return rouletteWheelSelection(engine, fitness, sum);
+    return rouletteWheelSelection(engine, fitness);
 }
 
 // sprawdzenie na podstawie prawdopodobieństwa czy może zajść mutacja

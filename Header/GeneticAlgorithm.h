@@ -31,9 +31,9 @@ private:
 
     void generateRandomParents(std::mt19937 engine, int populationCopyNumber);
 
-    void countFitnessValue(vector<float> &fitness, float &sum);
+    void countFitnessValue(vector<float> &fitness);
 
-    pair<int, int> rouletteWheelSelection(mt19937 &engine, vector<float> &fitness, float &sum);
+    pair<int, int> rouletteWheelSelection(mt19937 &engine, vector<float> &fitness);
 
     pair<int, int> tournamentSelection(mt19937 &engine);
 
@@ -80,7 +80,7 @@ public:
 
     void makeMutationRandomly(pair<int, vector<unsigned int>> *path, mt19937 &engine);
 
-    pair<int, int> rankSelection(mt19937 &engine, vector<float> &fitness, float &sum);
+    pair<int, int> rankSelection(mt19937 &engine, vector<float> &fitness);
 };
 
 
